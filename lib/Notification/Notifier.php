@@ -81,6 +81,11 @@ class Notifier implements INotifier {
 				);
 				$notification->setLink($this->url->linkToRouteAbsolute('deck.page.index') . '#!/board/' . $boardId . '//card/' . $cardId . '');
 				break;
+			case 'card_create':
+				$notification->setParsedSubject(
+					(string) $l->t('Es wurde eine Karte auf den Stappel "%s" hinzugefügt.', $params)
+				);
+				break;
 			case 'board-shared':
 				$boardId = $notification->getObjectId();
 				$initiator = $this->userManager->get($params[1]);
