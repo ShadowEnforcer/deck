@@ -25,7 +25,7 @@ namespace OCA\Deck\Db;
 
 class Stack extends RelationalEntity {
 
-	protected $title;
+	public $title;
 	protected $boardId;
 	protected $cards = array();
 	protected $order;

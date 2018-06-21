@@ -30,7 +30,7 @@ class Board extends RelationalEntity {
 	protected $color;
 	protected $archived = false;
 	protected $labels = [];
-	protected $acl = [];
+	public $acl = [];
 	protected $permissions = [];
 	protected $users = [];
 	protected $shared;
