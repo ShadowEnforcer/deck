@@ -27,37 +27,40 @@ use OCA\Deck\Db\AssignedUsers;
 use OCA\Deck\Db\AssignedUsersMapper;
 use OCA\Deck\Db\Card;
 use OCA\Deck\Db\CardMapper;
+use OCA\Deck\Db\BoardMapper;
 use OCA\Deck\Db\Acl;
 use OCA\Deck\Db\StackMapper;
 use OCA\Deck\NotFoundException;
 use OCA\Deck\StatusException;
+use \DateTime;
+use OCP\Notification\IManager as INotificationManager;
+use OCP\Notification\INotification;
 
 
 class CardService {
 
 	private $cardMapper;
 	private $stackMapper;
+	private $boardMapper;
 	private $permissionService;
 	private $boardService;
 	private $assignedUsersMapper;
-	private $attachmentService;
 
-	public function __construct(CardMapper $cardMapper, StackMapper $stackMapper, PermissionService $permissionService, BoardService $boardService, AssignedUsersMapper $assignedUsersMapper, AttachmentService $attachmentService) {
+	public function __construct(CardMapper $cardMapper, BoardMapper $boardMapper, StackMapper $stackMapper, PermissionService $permissionService, BoardService $boardService, AssignedUsersMapper $assignedUsersMapper, INotificationManager $notificationManager) {
 		$this->cardMapper = $cardMapper;
 		$this->stackMapper = $stackMapper;
+		$this->boardMapper = $boardMapper;
 		$this->permissionService = $permissionService;
 		$this->boardService = $boardService;
 		$this->assignedUsersMapper = $assignedUsersMapper;
-		$this->attachmentService = $attachmentService;
+		$this->notificationManager = $notificationManager;
 	}
 
 	public function find($cardId) {
 		$this->permissionService->checkPermission($this->cardMapper, $cardId, Acl::PERMISSION_READ);
 		$card = $this->cardMapper->find($cardId);
 		$assignedUsers = $this->assignedUsersMapper->find($card->getId());
-		$attachments = $this->attachmentService->findAll($cardId, true);
 		$card->setAssignedUsers($assignedUsers);
-		$card->setAttachments($attachments);
 		return $card;
 	}
 
@@ -69,12 +72,37 @@ class CardService {
 		if ($this->boardService->isArchived($this->stackMapper, $stackId)) {
 			throw new StatusException('Operation not allowed. This board is archived.');
 		}
+		//return $this->assignedUsersMapper->find($stackId);
+		$participant = $this->boardMapper->find($stackId, false, true);
+		foreach($participant->acl As $participantLine) {
+			$dateTime = new DateTime();
+			$notification = $this->notificationManager->createNotification();
+			$notification->setApp('deck')
+				->setUser($participantLine->participant)
+				->setDateTime($dateTime)
+				->setObject('deck', '1')
+				->setSubject('card_create', [$this->stackMapper->find($stackId)->title]);
+			$this->notificationManager->notify($notification);
+		}
+		//return explode(",", implode(",", $test))[1];
 		$card = new Card();
 		$card->setTitle($title);
 		$card->setStackId($stackId);
 		$card->setType($type);
 		$card->setOrder($order);
 		$card->setOwner($owner);
+		/* Benachrichtigung senden wenn neue Karte auf Stapel erstellt wird */
+		//TODO
+		/*$dateTime = new DateTime();
+
+		$notification = $this->notificationManager->createNotification();
+		$notification->setApp('deck')
+			->setUser('42FF0D90-ED66-4456-B55E-0C899C39DCC8')
+			->setDateTime($dateTime)
+			->setObject('deck', '1')
+			->setSubject('remote_share', ['test1']);
+		$this->notificationManager->notify($notification);*/
+		/* End Test */
 		return $this->cardMapper->insert($card);
 
 	}
@@ -157,6 +185,17 @@ class CardService {
 		}
 		$card = $this->cardMapper->find($id);
 		$card->setArchived(true);
+		$participant = $this->boardMapper->find($card->stackId, false, true);
+		foreach($participant->acl As $participantLine) {
+			$dateTime = new DateTime();
+			$notification = $this->notificationManager->createNotification();
+			$notification->setApp('deck')
+				->setUser($participantLine->participant)
+				->setDateTime($dateTime)
+				->setObject('deck', '1')
+				->setSubject('remote_share', ['test1']);
+			$this->notificationManager->notify($notification);
+		}
 		return $this->cardMapper->update($card);
 	}
 

@@ -29,14 +29,19 @@ use OCA\Deck\Db\AssignedUsersMapper;
 use OCA\Deck\Db\IPermissionMapper;
 use OCA\Deck\Db\Label;
 use OCA\Deck\Notification\NotificationHelper;
+use OCP\Notification\IManager as INotificationManager;
+use OCP\Notification\INotification;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\IL10N;
 use OCA\Deck\Db\Board;
 use OCA\Deck\Db\BoardMapper;
 use OCA\Deck\Db\LabelMapper;
+use \DateTime;
 
 
 class BoardService {
+	/** @var INotificationManager */
+	protected $notificationManager;
 
 	private $boardMapper;
 	private $labelMapper;
@@ -53,7 +58,8 @@ class BoardService {
 		AclMapper $aclMapper,
 		PermissionService $permissionService,
 		NotificationHelper $notificationHelper,
-		AssignedUsersMapper $assignedUsersMapper
+		AssignedUsersMapper $assignedUsersMapper,
+		INotificationManager $notificationManager
 	) {
 		$this->boardMapper = $boardMapper;
 		$this->labelMapper = $labelMapper;
@@ -62,6 +68,7 @@ class BoardService {
 		$this->permissionService = $permissionService;
 		$this->notificationHelper = $notificationHelper;
 		$this->assignedUsersMapper = $assignedUsersMapper;
+		$this->notificationManager = $notificationManager;
 	}
 
 	public function findAll($userInfo) {
